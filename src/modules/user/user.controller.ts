@@ -9,7 +9,7 @@ import {
   Post,
   Res,
   UseInterceptors,
-  UploadedFiles,
+  UploadedFiles, UseGuards, Request,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +21,8 @@ import {
   editFileName,
   imageFileFilter,
 } from '../../common/utils/file-upload.utils';
+import {JwtAuthGuard} from "../../common/guards/jwt-auth.guard";
+import {EApprovalRequest} from "../../core/enums/approval.request.enum";
 
 @Controller('user')
 export class UserController {
@@ -63,7 +65,7 @@ export class UserController {
   @UseInterceptors(
     FilesInterceptor('image', 10, {
       storage: diskStorage({
-        destination: './uploads',
+        destination: './files',
         filename: editFileName,
       }),
       fileFilter: imageFileFilter,

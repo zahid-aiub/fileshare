@@ -1,14 +1,12 @@
-import {
-  HttpStatus,
-  Injectable,
-  Logger,
-  UseInterceptors,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { CreateFileDto } from './dto/create-file.dto';
 import { UpdateFileDto } from './dto/update-file.dto';
 import { User } from '../user/entities/user.entity';
 import { FileRepository } from './file.repository';
 import { File } from './entities/file.entity';
+import { EApprovalRequest } from '../../core/enums/approval.request.enum';
+import { NotFoundException } from '../../common/exceptions/not-found.exception';
+
 const crypto = require('crypto');
 const fs = require('fs');
 
@@ -53,90 +51,9 @@ export class FilesService {
     };
   }
 
-  /* async uploadedFileToS3(file: Express.Multer.File, subFolder: string) {
-         this.storageService.s3_upload(
-             file,
-             'islamiboiv2',
-             file.filename,
-             file.mimetype,
-         );
-         const response = {
-             originalName: file.originalname,
-             filename: file.filename,
-         };
-         return {
-             status: HttpStatus.OK,
-             message: 'Image uploaded successfully!',
-             data: response,
-         };
-     }*/
-
-  /*async upload(file, folderName: any = 'banner') {
-    const originalName = file.originalname;
-    const bucketS3 = 'islamiboiv2';
-    // return await this.uploadS3(file.buffer, bucketS3, originalName, folderName);
-  }*/
-
   async uploadBulk(file, fileName: string, folderName: string) {
-    // const bucketS3 = '';
-    // return await this.uploadS3Bulk(file, bucketS3, fileName, folderName);
+    return null;
   }
-
-  /*async uploadS3(file, bucket, name, folderName) {
-    const s3 = this.s3();
-    const urlKey = folderName + '/' + name;
-    const params = {
-      Bucket: bucket,
-      Key: urlKey,
-      Body: file,
-      ACL: 'public-read-write',
-    };
-
-    return new Promise((resolve, reject) => {
-      s3.upload(params, (err, data) => {
-        if (err) {
-          Logger.error(err);
-          reject(err.message);
-        }
-        resolve({
-          status: HttpStatus.OK,
-          message: 'Image uploaded successfully!',
-          data: {
-            originalName: name,
-            filename: data.Location,
-          },
-        });
-      });
-    });
-  }*/
-
-  /*async uploadS3Bulk(file, bucket, name, folderName) {
-    const s3 = this.s3();
-    const urlKey = folderName + '/' + name;
-    const params = {
-      Bucket: bucket,
-      Key: urlKey,
-      Body: file,
-      ACL: 'public-read-write',
-    };
-
-    return new Promise((resolve, reject) => {
-      s3.upload(params, (err, data) => {
-        if (err) {
-          Logger.error(err);
-          reject(err.message);
-        }
-        resolve(data.Location);
-      });
-    });
-  }*/
-
-  /*s3() {
-    return new S3({
-      accessKeyId: 'AKIA4BDQYL4CQRVHDVW5',
-      secretAccessKey: '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',
-    });
-  }*/
 
   async moveToOriginalDirectory(pathToFile: any, pathToNewDestination: any) {
     await fs.copyFile(pathToFile, pathToNewDestination, function (err) {
@@ -176,5 +93,25 @@ export class FilesService {
         hash: finalHex,
       },
     });
+  }
+
+  async createUnblockRequest(fileId, user: User) {
+    const file = await this.fileRepository.findOne(fileId);
+    if (file && file?.userId == user.userId) {
+      file.approvalRequest = EApprovalRequest.REQUEST_FOR_UNBLOCK;
+      return this.fileRepository.save(file);
+    } else {
+      return new NotFoundException('File Not Found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async unblockRequestApproval(fileId, request: EApprovalRequest) {
+    const file = await this.fileRepository.findOne(fileId);
+    if (file) {
+      file.approvalRequest = request;
+      return this.fileRepository.save(file);
+    } else {
+      return new NotFoundException('File Not Found', HttpStatus.NOT_FOUND);
+    }
   }
 }

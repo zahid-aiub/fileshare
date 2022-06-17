@@ -26,6 +26,10 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 import fs from 'fs';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { RolesEnum } from '../../core/enums/roles.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { EApprovalRequest } from '../../core/enums/approval.request.enum';
 
 @Controller('file')
 export class FilesController {
@@ -96,6 +100,23 @@ export class FilesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.filesService.remove(+id);
+  }
+
+  @Post('request-for-unblock')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolesEnum.USER)
+  fileUnblockRequest(@Param('fileId') fileId, @Request() req) {
+    return this.filesService.createUnblockRequest(fileId, req.user);
+  }
+
+  @Post('approval-resolve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  handleApproval(
+    @Param('fileId') fileId,
+    @Param('approvalReq') approvalReq: EApprovalRequest,
+  ) {
+    return this.filesService.unblockRequestApproval(fileId, approvalReq);
   }
 
   @Post('bulk-upload')

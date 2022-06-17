@@ -7,7 +7,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
  * @since December 9, 2021
  */
 export class NotFoundException extends HttpException {
-  constructor(message) {
+  constructor(message, number: number) {
     super(message, HttpStatus.NOT_FOUND);
   }
 }

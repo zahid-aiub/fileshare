@@ -4,6 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { EApprovalRequest } from '../../../core/enums/approval.request.enum';
 
 @Entity()
 export class File {
@@ -21,6 +22,12 @@ export class File {
 
   @Column({ default: false })
   isBlockListed: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: EApprovalRequest,
+  })
+  approvalRequest: EApprovalRequest;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
