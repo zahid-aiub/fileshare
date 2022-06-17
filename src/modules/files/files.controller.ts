@@ -58,12 +58,12 @@ export class FilesController {
   @Post('uploadMultipleFiles')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
-    FilesInterceptor('image', 10, {
+    FilesInterceptor('file', 10, {
       storage: diskStorage({
-        destination: './uploads',
+        destination: './files',
         filename: editFileName,
       }),
-      fileFilter: imageFileFilter,
+      // fileFilter: imageFileFilter,
     }),
   )
   async uploadMultipleFiles(@UploadedFiles() files) {
