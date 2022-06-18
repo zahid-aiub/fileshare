@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Param,
   Patch,
-  Post,
+  Post, Put,
   Request,
   Res,
   UploadedFile,
@@ -54,7 +54,6 @@ export class FilesController {
         destination: './files',
         filename: editFileName,
       }),
-      // fileFilter: imageFileFilter,
     }),
   )
   async uploadedFile(@UploadedFile() file, @Request() req) {
@@ -108,10 +107,10 @@ export class FilesController {
     return this.filesService.remove(+id);
   }
 
-  @Post('request-for-unblock')
+  @Put('request-for-unblock/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolesEnum.USER)
-  fileUnblockRequest(@Param('fileId') fileId, @Request() req) {
+  fileUnblockRequest(@Param('id') fileId, @Request() req) {
     return this.filesService.createUnblockRequest(fileId, req.user);
   }
 

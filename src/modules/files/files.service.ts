@@ -1,11 +1,11 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
-import { CreateFileDto } from './dto/create-file.dto';
-import { UpdateFileDto } from './dto/update-file.dto';
-import { User } from '../user/entities/user.entity';
-import { FileRepository } from './file.repository';
-import { File } from './entities/file.entity';
-import { EApprovalRequest } from '../../core/enums/approval.request.enum';
-import { NotFoundException } from '../../common/exceptions/not-found.exception';
+import {HttpStatus, Injectable} from '@nestjs/common';
+import {CreateFileDto} from './dto/create-file.dto';
+import {UpdateFileDto} from './dto/update-file.dto';
+import {User} from '../user/entities/user.entity';
+import {FileRepository} from './file.repository';
+import {File} from './entities/file.entity';
+import {EApprovalRequest} from '../../core/enums/approval.request.enum';
+import {NotFoundException} from '../../common/exceptions/not-found.exception';
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -38,6 +38,7 @@ export class FilesService {
     file1.hash = finalHex;
     file1.userId = user.userId;
     dbFile ? (file1.isBlockListed = true) : false;
+    dbFile ? (file1.approvalRequest = EApprovalRequest.BLOCK_LISTED) : null;
     await this.fileRepository.save(file1);
 
     const response = {
@@ -76,6 +77,9 @@ export class FilesService {
       where: {
         userId: user.userId,
       },
+      order: {
+        createdAt: 'DESC',
+      },
     });
   }
 
@@ -113,6 +117,9 @@ export class FilesService {
     const file = await this.fileRepository.findOne(fileId);
     if (file) {
       file.approvalRequest = request;
+      if (request == EApprovalRequest.APPROVED) {
+        file.isBlockListed = false;
+      }
       return this.fileRepository.save(file);
     } else {
       return new NotFoundException('File Not Found', HttpStatus.NOT_FOUND);

@@ -26,6 +26,7 @@ export class File {
   @Column({
     type: 'enum',
     enum: EApprovalRequest,
+    nullable: true,
   })
   approvalRequest: EApprovalRequest;
 
