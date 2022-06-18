@@ -3,13 +3,13 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   Patch,
-  HttpStatus,
   Post,
   Res,
+  UploadedFiles,
   UseInterceptors,
-  UploadedFiles, UseGuards, Request,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,8 +21,6 @@ import {
   editFileName,
   imageFileFilter,
 } from '../../common/utils/file-upload.utils';
-import {JwtAuthGuard} from "../../common/guards/jwt-auth.guard";
-import {EApprovalRequest} from "../../core/enums/approval.request.enum";
 
 @Controller('user')
 export class UserController {

@@ -40,6 +40,12 @@ export class FilesController {
     return this.filesService.create(createFileDto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('all')
+  getAdmin(@Request() req) {
+    return this.filesService.findAll(req.user);
+  }
+
   @Post('upload')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(

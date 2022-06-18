@@ -71,8 +71,12 @@ export class FilesService {
     });
   }
 
-  findAll() {
-    return `This action returns all files`;
+  findAll(user: User) {
+    return this.fileRepository.find({
+      where: {
+        userId: user.userId,
+      },
+    });
   }
 
   findOne(id: number) {
