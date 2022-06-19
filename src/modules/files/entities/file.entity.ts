@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { EApprovalRequest } from '../../../core/enums/approval.request.enum';
+import {type} from "os";
 
 @Entity()
 export class File {
@@ -15,9 +16,12 @@ export class File {
   filename: string;
 
   @Column()
+  size: number;
+
+  @Column()
   hash: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   userId: number;
 
   @Column({ default: false })
@@ -29,6 +33,9 @@ export class File {
     nullable: true,
   })
   approvalRequest: EApprovalRequest;
+
+  @Column({ type: 'date', nullable: true })
+  lastDownloadedAt: Date;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

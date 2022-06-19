@@ -6,7 +6,8 @@ import {
   HttpStatus,
   Param,
   Patch,
-  Post, Put,
+  Post,
+  Put,
   Request,
   Res,
   UploadedFile,
@@ -30,6 +31,8 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolesEnum } from '../../core/enums/roles.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { EApprovalRequest } from '../../core/enums/approval.request.enum';
+import { File } from './entities/file.entity';
+import { NotFoundException } from '../../common/exceptions/not-found.exception';
 
 @Controller('file')
 export class FilesController {
@@ -41,9 +44,14 @@ export class FilesController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('all')
-  getAdmin(@Request() req) {
+  @Get()
+  getFiles(@Request() req) {
     return this.filesService.findAll(req.user);
+  }
+
+  @Get('/all')
+  getAllFiles() {
+    return this.filesService.findAllFiles();
   }
 
   @Post('upload')
@@ -58,6 +66,19 @@ export class FilesController {
   )
   async uploadedFile(@UploadedFile() file, @Request() req) {
     return await this.filesService.uploadedFile(file, req.user);
+  }
+
+  @Post('public/upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './files',
+        filename: editFileName,
+      }),
+    }),
+  )
+  async uploadedPubFile(@UploadedFile() file) {
+    return await this.filesService.uploadedFile(file);
   }
 
   @Post('uploadMultipleFiles')
@@ -87,14 +108,20 @@ export class FilesController {
     };
   }
 
-  @Get(':fileName')
-  findOne(@Param('fileName') image, @Res() res) {
-    const imagePath = image && image.split('|').join('/');
-    const response = res.sendFile(imagePath, { root: './files/' });
-    return {
-      status: HttpStatus.OK,
-      data: response,
-    };
+  @Get('download/:id')
+  async getFile(@Param('id') id, @Res() res) {
+    const dbFile = await this.filesService.findOne(id);
+    if (dbFile && dbFile?.isBlockListed) {
+      return new NotFoundException('File is BlockListed', 400);
+    } else {
+      const file = dbFile.filename;
+      const imagePath = file && file.split('|').join('/');
+      const response = res.sendFile(imagePath, { root: './files/' });
+      return {
+        status: HttpStatus.OK,
+        data: response,
+      };
+    }
   }
 
   @Patch(':id')
@@ -110,8 +137,13 @@ export class FilesController {
   @Put('request-for-unblock/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolesEnum.USER)
-  fileUnblockRequest(@Param('id') fileId, @Request() req) {
-    return this.filesService.createUnblockRequest(fileId, req.user);
+  fileUnblockRequest(@Param('id') fileId) {
+    return this.filesService.createUnblockRequest(fileId);
+  }
+
+  @Put('pub/request-for-unblock/:id')
+  pubFileUnblockRequest(@Param('id') fileId) {
+    return this.filesService.createUnblockRequest(fileId);
   }
 
   @Post('approval-resolve')

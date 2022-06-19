@@ -1,11 +1,11 @@
-import {HttpStatus, Injectable} from '@nestjs/common';
-import {CreateFileDto} from './dto/create-file.dto';
-import {UpdateFileDto} from './dto/update-file.dto';
-import {User} from '../user/entities/user.entity';
-import {FileRepository} from './file.repository';
-import {File} from './entities/file.entity';
-import {EApprovalRequest} from '../../core/enums/approval.request.enum';
-import {NotFoundException} from '../../common/exceptions/not-found.exception';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { CreateFileDto } from './dto/create-file.dto';
+import { UpdateFileDto } from './dto/update-file.dto';
+import { User } from '../user/entities/user.entity';
+import { FileRepository } from './file.repository';
+import { File } from './entities/file.entity';
+import { EApprovalRequest } from '../../core/enums/approval.request.enum';
+import { NotFoundException } from '../../common/exceptions/not-found.exception';
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -18,7 +18,7 @@ export class FilesService {
     return 'This action adds a new file';
   }
 
-  async uploadedFile(file: Express.Multer.File, user: User) {
+  async uploadedFile(file: Express.Multer.File, user?: User) {
     if (file.size / 1000000 > 10) {
       return {
         status: HttpStatus.BAD_REQUEST,
@@ -35,8 +35,9 @@ export class FilesService {
 
     const file1 = new File();
     file1.filename = file.filename;
+    file1.size = file.size;
     file1.hash = finalHex;
-    file1.userId = user.userId;
+    file1.userId = user?.userId;
     dbFile ? (file1.isBlockListed = true) : false;
     dbFile ? (file1.approvalRequest = EApprovalRequest.BLOCK_LISTED) : null;
     await this.fileRepository.save(file1);
@@ -83,8 +84,16 @@ export class FilesService {
     });
   }
 
+  findAllFiles() {
+    return this.fileRepository.find({
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+  }
+
   findOne(id: number) {
-    return `This action returns a #${id} file`;
+    return this.fileRepository.findOne(id);
   }
 
   update(id: number, updateFileDto: UpdateFileDto) {
@@ -103,9 +112,9 @@ export class FilesService {
     });
   }
 
-  async createUnblockRequest(fileId, user: User) {
+  async createUnblockRequest(fileId) {
     const file = await this.fileRepository.findOne(fileId);
-    if (file && file?.userId == user.userId) {
+    if (file) {
       file.approvalRequest = EApprovalRequest.REQUEST_FOR_UNBLOCK;
       return this.fileRepository.save(file);
     } else {

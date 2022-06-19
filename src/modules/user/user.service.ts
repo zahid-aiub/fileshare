@@ -34,9 +34,10 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto): Promise<ApiResponse> {
     const user = new User();
+    user.fullName = createUserDto.fullName;
     user.username = createUserDto.username;
     // const password = Math.floor(1000 + Math.random() * 9000).toString();
-    const password = 'zil123';
+    const password = createUserDto.password;
     const hash = await bcrypt.hash(password, SALT_OR_ROUND);
     user.password = hash;
     user.roles = createUserDto.roles;
