@@ -18,10 +18,7 @@ import {
 import { FilesService } from './files.service';
 import { CreateFileDto } from './dto/create-file.dto';
 import { UpdateFileDto } from './dto/update-file.dto';
-import {
-  editFileName,
-  imageFileFilter,
-} from '../../common/utils/file-upload.utils';
+import { editFileName } from '../../common/utils/file-upload.utils';
 import { diskStorage } from 'multer';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
@@ -31,12 +28,16 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { RolesEnum } from '../../core/enums/roles.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { EApprovalRequest } from '../../core/enums/approval.request.enum';
-import { File } from './entities/file.entity';
 import { NotFoundException } from '../../common/exceptions/not-found.exception';
+import { FileRepository } from './file.repository';
+import { ApprovalDto } from './dto/approval.dto';
 
 @Controller('file')
 export class FilesController {
-  constructor(private readonly filesService: FilesService) {}
+  constructor(
+    private readonly filesService: FilesService,
+    private readonly fileRepository: FileRepository,
+  ) {}
 
   @Post()
   create(@Body() createFileDto: CreateFileDto) {
@@ -49,7 +50,16 @@ export class FilesController {
     return this.filesService.findAll(req.user);
   }
 
-  @Get('/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  @Get('pending-approval')
+  findAllApprovalPendingFiles() {
+    return this.filesService.findAllApprovalPendingFiles(
+      EApprovalRequest.REQUEST_FOR_UNBLOCK,
+    );
+  }
+
+  @Get('all')
   getAllFiles() {
     return this.filesService.findAllFiles();
   }
@@ -117,6 +127,8 @@ export class FilesController {
       const file = dbFile.filename;
       const imagePath = file && file.split('|').join('/');
       const response = res.sendFile(imagePath, { root: './files/' });
+      dbFile.lastDownloadedAt = new Date();
+      await this.fileRepository.save(dbFile);
       return {
         status: HttpStatus.OK,
         data: response,
@@ -146,14 +158,14 @@ export class FilesController {
     return this.filesService.createUnblockRequest(fileId);
   }
 
-  @Post('approval-resolve')
+  @Put('approval-resolve')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolesEnum.ADMIN)
-  handleApproval(
-    @Param('fileId') fileId,
-    @Param('approvalReq') approvalReq: EApprovalRequest,
-  ) {
-    return this.filesService.unblockRequestApproval(fileId, approvalReq);
+  handleApproval(@Body() approvalDto: ApprovalDto) {
+    return this.filesService.unblockRequestApproval(
+      approvalDto.fileId,
+      approvalDto.approvalReq,
+    );
   }
 
   @Post('bulk-upload')

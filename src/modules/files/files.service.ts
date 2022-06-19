@@ -92,6 +92,17 @@ export class FilesService {
     });
   }
 
+  findAllApprovalPendingFiles(request: EApprovalRequest) {
+    return this.fileRepository.find({
+      where: {
+        approvalRequest: request,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+  }
+
   findOne(id: number) {
     return this.fileRepository.findOne(id);
   }
@@ -128,10 +139,31 @@ export class FilesService {
       file.approvalRequest = request;
       if (request == EApprovalRequest.APPROVED) {
         file.isBlockListed = false;
+        return this.fileRepository.save(file);
+      } else if (request == EApprovalRequest.REJECT) {
+        await this.fileRepository.remove(file);
       }
-      return this.fileRepository.save(file);
     } else {
       return new NotFoundException('File Not Found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  async deleteInactiveFiles() {
+    const files = await this.fileRepository.find();
+    for (const file of files) {
+      if (
+        this.dayDifference(new Date(file.lastDownloadedAt), new Date()) > 14
+      ) {
+        await this.fileRepository.remove(file);
+      }
+    }
+  }
+
+  dayDifference(date1: Date, date2: Date) {
+    const timeInMilisec: number = date1.getTime() - date2.getTime();
+    const daysBetweenDates: number = Math.ceil(
+      timeInMilisec / (1000 * 60 * 60 * 24),
+    );
+    return daysBetweenDates;
   }
 }
